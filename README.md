@@ -1,0 +1,5 @@
+- **Qt 6.8.3** — Framework
+- **QML** — UI
+- **C++** — Backend
+- **CMake** — Build sistemi
+- **Qt Location / OpenStreetMap** — Harita
