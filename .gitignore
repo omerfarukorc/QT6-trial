@@ -37,3 +37,24 @@ ui_*
 # OS
 Thumbs.db
 .DS_Store
+
+# Telemetry and cache
+QGCMapCache/
+QGCMapCache
+QGCMapCache*/
+run_log.txt
+errors_parsed.txt
+build_out*.txt
+build_raw.txt
+
+# Temp build scripts
+build.bat
+get_err*.py
+extract_error.py
+
+# Qt generated
+.qmake.stash
+CMakeLists.txt.user*
+
+# External sources
+qgc-source/

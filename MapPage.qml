@@ -9,10 +9,32 @@ Item {
         anchors.fill: parent
 
         map.plugin: Plugin {
-            name: "osm"
+            name: "QGroundControl"
         }
         map.center: QtPositioning.coordinate(39.9334, 32.8597)
         map.zoomLevel: 12
+
+        // Set map type to OpenStreetMap by default since others might need API keys
+        Component.onCompleted: {
+            // Find OSM map type
+            for (var i = 0; i < mapView.map.supportedMapTypes.length; i++) {
+                if (mapView.map.supportedMapTypes[i].name === "Street Map") {
+                    mapView.map.activeMapType = mapView.map.supportedMapTypes[i];
+                    break;
+                }
+            }
+        }
+
+        Shortcut {
+            enabled: mapView.map.zoomLevel < mapView.map.maximumZoomLevel
+            sequence: StandardKey.ZoomIn
+            onActivated: mapView.map.zoomLevel = Math.round(mapView.map.zoomLevel + 1)
+        }
+        Shortcut {
+            enabled: mapView.map.zoomLevel > mapView.map.minimumZoomLevel
+            sequence: StandardKey.ZoomOut
+            onActivated: mapView.map.zoomLevel = Math.round(mapView.map.zoomLevel - 1)
+        }
     }
 
     // ── ZOOM KONTROLLERI ──
