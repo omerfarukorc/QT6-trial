@@ -21,6 +21,10 @@ qt_add_qml_module(appdronetakip
         TelemetryPage.qml
         MissionPage.qml
         SettingsPage.qml
+    RESOURCES
+        assets/drone.svg
+        assets/base_station.svg
+        assets/user.svg
 )
 
 set_target_properties(appdronetakip PROPERTIES

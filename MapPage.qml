@@ -25,6 +25,62 @@ Item {
             }
         }
 
+        // --- MOCK DATA FOR MARKERS ---
+        // TODO: In the future, connect these properties to real C++ Telemetry/GPS models
+        property var droneCoordinate: QtPositioning.coordinate(39.9350, 32.8620)
+        property var baseCoordinate: QtPositioning.coordinate(39.9334, 32.8597)
+        property var userCoordinate: QtPositioning.coordinate(39.9310, 32.8570)
+        property real droneHeading: 45 // degrees
+
+        // 1. Base Station Marker
+        MapQuickItem {
+            coordinate: mapView.baseCoordinate
+            anchorPoint.x: baseIcon.width / 2
+            anchorPoint.y: baseIcon.height / 2
+            sourceItem: Image {
+                id: baseIcon
+                source: "qrc:/assets/base_station.svg"
+                sourceSize: Qt.size(36, 36)
+            }
+        }
+
+        // 2. User Marker
+        MapQuickItem {
+            coordinate: mapView.userCoordinate
+            anchorPoint.x: userIcon.width / 2
+            anchorPoint.y: userIcon.height / 2
+            sourceItem: Image {
+                id: userIcon
+                source: "qrc:/assets/user.svg"
+                sourceSize: Qt.size(24, 24)
+            }
+        }
+
+        // 3. Drone Marker
+        MapQuickItem {
+            coordinate: mapView.droneCoordinate
+            anchorPoint.x: droneIcon.width / 2
+            anchorPoint.y: droneIcon.height / 2
+            sourceItem: Item {
+                width: 48
+                height: 48
+                Image {
+                    id: droneIcon
+                    anchors.centerIn: parent
+                    source: "qrc:/assets/drone.svg"
+                    sourceSize: Qt.size(48, 48)
+                    rotation: mapView.droneHeading
+
+                    Behavior on rotation {
+                        RotationAnimation {
+                            direction: RotationAnimation.Shortest
+                            duration: 250
+                        }
+                    }
+                }
+            }
+        }
+
         Shortcut {
             enabled: mapView.map.zoomLevel < mapView.map.maximumZoomLevel
             sequence: StandardKey.ZoomIn
@@ -34,6 +90,157 @@ Item {
             enabled: mapView.map.zoomLevel > mapView.map.minimumZoomLevel
             sequence: StandardKey.ZoomOut
             onActivated: mapView.map.zoomLevel = Math.round(mapView.map.zoomLevel - 1)
+        }
+    }
+
+    // --- ANIMATON FOR SMOOTH PANNING ---
+    PropertyAnimation {
+        id: mapCenterAnimation
+        target: mapView.map
+        property: "center"
+        duration: 500
+        easing.type: Easing.InOutQuad
+    }
+
+    function smoothFocusMap(targetCoordinate) {
+        mapCenterAnimation.stop();
+        mapCenterAnimation.to = targetCoordinate;
+        mapCenterAnimation.start();
+    }
+
+    // ── ODAKLANMA / NAVİGASYON PANELİ (TOP-RIGHT) ──
+    Rectangle {
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.rightMargin: 20
+        anchors.topMargin: 20
+        width: 140
+        height: navColumn.height + 16
+        radius: 10
+        color: "#d9101520" // Semitransparent dark like other panels
+        border.color: "#1e2a3a"
+        border.width: 1
+
+        Column {
+            id: navColumn
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.margins: 8
+            spacing: 6
+
+            Text {
+                text: "Harita Odak"
+                color: "#64748b"
+                font.pixelSize: 11
+                font.bold: true
+                bottomPadding: 4
+            }
+
+            // Drone Button
+            Rectangle {
+                width: parent.width
+                height: 32
+                radius: 6
+                color: droneBtnMouse.containsMouse ? "#1e2a3a" : "transparent"
+
+                Row {
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.left: parent.left
+                    anchors.leftMargin: 8
+                    spacing: 8
+
+                    Image {
+                        source: "qrc:/assets/drone.svg"
+                        sourceSize: Qt.size(16, 16)
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                    Text {
+                        text: "Drone'a Git"
+                        color: "#e2e8f0"
+                        font.pixelSize: 12
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                }
+
+                MouseArea {
+                    id: droneBtnMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: smoothFocusMap(mapView.droneCoordinate)
+                }
+            }
+
+            // Base Station Button
+            Rectangle {
+                width: parent.width
+                height: 32
+                radius: 6
+                color: baseBtnMouse.containsMouse ? "#1e2a3a" : "transparent"
+
+                Row {
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.left: parent.left
+                    anchors.leftMargin: 8
+                    spacing: 8
+
+                    Image {
+                        source: "qrc:/assets/base_station.svg"
+                        sourceSize: Qt.size(16, 16)
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                    Text {
+                        text: "Ev'e Dön"
+                        color: "#e2e8f0"
+                        font.pixelSize: 12
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                }
+
+                MouseArea {
+                    id: baseBtnMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: smoothFocusMap(mapView.baseCoordinate)
+                }
+            }
+
+            // User Button
+            Rectangle {
+                width: parent.width
+                height: 32
+                radius: 6
+                color: userBtnMouse.containsMouse ? "#1e2a3a" : "transparent"
+
+                Row {
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.left: parent.left
+                    anchors.leftMargin: 8
+                    spacing: 8
+
+                    Image {
+                        source: "qrc:/assets/user.svg"
+                        sourceSize: Qt.size(16, 16)
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                    Text {
+                        text: "Bana Git"
+                        color: "#e2e8f0"
+                        font.pixelSize: 12
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                }
+
+                MouseArea {
+                    id: userBtnMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: smoothFocusMap(mapView.userCoordinate)
+                }
+            }
         }
     }
 
