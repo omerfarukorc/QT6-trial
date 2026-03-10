@@ -4,9 +4,11 @@ import QtLocation
 import QtPositioning
 
 Item {
+    property real topBarHeight: 48
     MapView {
         id: mapView
         anchors.fill: parent
+
 
         map.plugin: Plugin {
             name: "QGroundControl"
@@ -114,59 +116,35 @@ Item {
         mapCenterAnimation.start();
     }
 
-    // ── ODAKLANMA / NAVİGASYON PANELİ (TOP-RIGHT) ──
+    // ── ODAKLANMA / NAVİGASYON PANELİ (TOP-CENTER) ──
     Rectangle {
-        anchors.right: parent.right
+        anchors.right: parent.right   // 👈 sağa yasla
         anchors.top: parent.top
-        anchors.rightMargin: 20
-        anchors.topMargin: 20
-        width: 140
-        height: navColumn.height + 16
-        radius: 10
-        color: "#d9101520" // Semitransparent dark like other panels
-        border.color: "#1e2a3a"
+        anchors.rightMargin: 10       // 👈 sağdan boşluk
+        anchors.topMargin: topBarHeight + 10
+        width: navRow.width + 16
+        height: navRow.height + 16
+        radius: 12
+        color: "#a0000000" // Slightly transparent black
+        border.color: "#33ffffff"
         border.width: 1
 
-        Column {
-            id: navColumn
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.margins: 8
-            spacing: 6
-
-            Text {
-                text: "Harita Odak"
-                color: "#64748b"
-                font.pixelSize: 11
-                font.bold: true
-                bottomPadding: 4
-            }
+        Row {
+            id: navRow
+            anchors.centerIn: parent
+            spacing: 8
 
             // Drone Button
             Rectangle {
-                width: parent.width
-                height: 32
-                radius: 6
-                color: droneBtnMouse.containsMouse ? "#1e2a3a" : "transparent"
+                width: 40
+                height: 40
+                radius: 8
+                color: droneBtnMouse.containsMouse ? "#40ffffff" : "transparent"
 
-                Row {
-                    anchors.verticalCenter: parent.verticalCenter
-                    anchors.left: parent.left
-                    anchors.leftMargin: 8
-                    spacing: 8
-
-                    Image {
-                        source: "qrc:/assets/drone.svg"
-                        sourceSize: Qt.size(16, 16)
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                    Text {
-                        text: "Drone'a Git"
-                        color: "#e2e8f0"
-                        font.pixelSize: 12
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
+                Image {
+                    source: "assets/drone.svg"
+                    sourceSize: Qt.size(24, 24)
+                    anchors.centerIn: parent
                 }
 
                 MouseArea {
@@ -180,28 +158,15 @@ Item {
 
             // Base Station Button
             Rectangle {
-                width: parent.width
-                height: 32
-                radius: 6
-                color: baseBtnMouse.containsMouse ? "#1e2a3a" : "transparent"
+                width: 40
+                height: 40
+                radius: 8
+                color: baseBtnMouse.containsMouse ? "#40ffffff" : "transparent"
 
-                Row {
-                    anchors.verticalCenter: parent.verticalCenter
-                    anchors.left: parent.left
-                    anchors.leftMargin: 8
-                    spacing: 8
-
-                    Image {
-                        source: "qrc:/assets/base_station.svg"
-                        sourceSize: Qt.size(16, 16)
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                    Text {
-                        text: "Ev'e Dön"
-                        color: "#e2e8f0"
-                        font.pixelSize: 12
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
+                Image {
+                    source: "assets/base_station.svg"
+                    sourceSize: Qt.size(24, 24)
+                    anchors.centerIn: parent
                 }
 
                 MouseArea {
@@ -215,28 +180,15 @@ Item {
 
             // User Button
             Rectangle {
-                width: parent.width
-                height: 32
-                radius: 6
-                color: userBtnMouse.containsMouse ? "#1e2a3a" : "transparent"
+                width: 40
+                height: 40
+                radius: 8
+                color: userBtnMouse.containsMouse ? "#40ffffff" : "transparent"
 
-                Row {
-                    anchors.verticalCenter: parent.verticalCenter
-                    anchors.left: parent.left
-                    anchors.leftMargin: 8
-                    spacing: 8
-
-                    Image {
-                        source: "qrc:/assets/user.svg"
-                        sourceSize: Qt.size(16, 16)
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                    Text {
-                        text: "Bana Git"
-                        color: "#e2e8f0"
-                        font.pixelSize: 12
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
+                Image {
+                    source: "assets/user.svg"
+                    sourceSize: Qt.size(24, 24)
+                    anchors.centerIn: parent
                 }
 
                 MouseArea {
@@ -411,7 +363,7 @@ Item {
         anchors.left: parent.left
         anchors.top: parent.top
         anchors.leftMargin: 10
-        anchors.topMargin: 58
+        anchors.topMargin: topBarHeight + 10
         width: infoColumn.width + 20
         height: infoColumn.height + 14
         radius: 8

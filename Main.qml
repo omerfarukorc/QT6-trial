@@ -15,6 +15,7 @@ Window {
     // ── KATMAN 0: TAM EKRAN HARİTA ──
     MapPage {
         anchors.fill: parent
+        topBarHeight: topBar.height
     }
 
     // ── KATMAN 1: ÜST BAR ──
