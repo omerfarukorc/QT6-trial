@@ -23,6 +23,11 @@ Item {
                     break;
                 }
             }
+
+            // In Qt 6 with MapView, MapQuickItems must be explicitly added to the map object
+            mapView.map.addMapItem(baseMarker);
+            mapView.map.addMapItem(userMarker);
+            mapView.map.addMapItem(droneMarker);
         }
 
         // --- MOCK DATA FOR MARKERS ---
@@ -34,40 +39,41 @@ Item {
 
         // 1. Base Station Marker
         MapQuickItem {
+            id: baseMarker
             coordinate: mapView.baseCoordinate
-            anchorPoint.x: baseIcon.width / 2
-            anchorPoint.y: baseIcon.height / 2
+            anchorPoint: Qt.point(baseIcon.width / 2, baseIcon.height / 2)
             sourceItem: Image {
                 id: baseIcon
-                source: "qrc:/assets/base_station.svg"
+                source: "assets/base_station.svg"
                 sourceSize: Qt.size(36, 36)
             }
         }
 
         // 2. User Marker
         MapQuickItem {
+            id: userMarker
             coordinate: mapView.userCoordinate
-            anchorPoint.x: userIcon.width / 2
-            anchorPoint.y: userIcon.height / 2
+            anchorPoint: Qt.point(userIcon.width / 2, userIcon.height / 2)
             sourceItem: Image {
                 id: userIcon
-                source: "qrc:/assets/user.svg"
+                source: "assets/user.svg"
                 sourceSize: Qt.size(24, 24)
             }
         }
 
         // 3. Drone Marker
         MapQuickItem {
+            id: droneMarker
             coordinate: mapView.droneCoordinate
-            anchorPoint.x: droneIcon.width / 2
-            anchorPoint.y: droneIcon.height / 2
+            anchorPoint: Qt.point(48 / 2, 48 / 2)
             sourceItem: Item {
                 width: 48
                 height: 48
+
                 Image {
                     id: droneIcon
                     anchors.centerIn: parent
-                    source: "qrc:/assets/drone.svg"
+                    source: "assets/drone.svg"
                     sourceSize: Qt.size(48, 48)
                     rotation: mapView.droneHeading
 

@@ -17,14 +17,14 @@
 #include "QGCMapUrlEngine.h"
 #include "BingMapProvider.h"
 #include "GenericMapProvider.h"
-#include "GoogleMapProvid
-er.h "
+#include "GoogleMapProvider.h"
 #include <QGCLoggingCategory.h>
+#include <QList>
+#include <memory>
 
-    QGC_LOGGING_CATEGORY(QGCMapUrlEngineLog,
-                         "qgc.qtlocationplugin.qgcmapurlengine")
+QGC_LOGGING_CATEGORY(QGCMapUrlEngineLog, "qgc.qtlocationplugin.qgcmapurlengine")
 
-        const QList<SharedMapProvider> UrlFactory::_providers = {
+const QList<SharedMapProvider> UrlFactory::_providers = {
 #ifndef QGC_NO_GOOGLE_MAPS
     std::make_shared<GoogleStreetMapProvider>(),
     std::make_shared<GoogleSatelliteMapProvider>(),
