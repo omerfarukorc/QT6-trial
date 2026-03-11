@@ -18,6 +18,7 @@ qt_add_qml_module(appdronetakip
     QML_FILES
         Main.qml
         MapPage.qml
+        CameraView.qml
         TelemetryPage.qml
         MissionPage.qml
         SettingsPage.qml
