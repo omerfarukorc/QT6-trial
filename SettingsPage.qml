@@ -86,22 +86,31 @@ Column {
                 from: 0
                 to: 40
                 stepSize: 1
-                value: root.rtkSatelliteCount
+                
+                // Başlangıç değerini al
+                Component.onCompleted: {
+                    rtkSlider.value = root.rtkSatelliteCount;
+                }
 
-                onValueChanged: {
-                    root.rtkSatelliteCount = Math.round(value);
+                // Sadece kullanıcı kaydırdığında değeri güncelle (binding loop'u önler)
+                onMoved: {
+                    root.rtkSatelliteCount = Math.round(rtkSlider.value);
                 }
 
                 background: Rectangle {
                     x: rtkSlider.leftPadding
                     y: rtkSlider.topPadding + rtkSlider.availableHeight / 2 - height / 2
+                    implicitWidth: 200
+                    implicitHeight: 24 // Slider'ın tıklanabilir yüksekliğini belirler
                     width: rtkSlider.availableWidth
-                    height: 4; radius: 2
+                    height: 4
+                    radius: 2
                     color: "#1e2a3a"
 
                     Rectangle {
                         width: rtkSlider.visualPosition * parent.width
-                        height: parent.height; radius: 2
+                        height: parent.height
+                        radius: 2
                         color: {
                             var count = root.rtkSatelliteCount;
                             if (count < 10)  return "#ef4444";
@@ -114,9 +123,14 @@ Column {
                 handle: Rectangle {
                     x: rtkSlider.leftPadding + rtkSlider.visualPosition * (rtkSlider.availableWidth - width)
                     y: rtkSlider.topPadding + rtkSlider.availableHeight / 2 - height / 2
-                    width: 18; height: 18; radius: 9
+                    implicitWidth: 18
+                    implicitHeight: 18
+                    width: 18
+                    height: 18
+                    radius: 9
                     color: rtkSlider.pressed ? "#ffffff" : "#c8d6e5"
-                    border.color: "#475569"; border.width: 1
+                    border.color: "#475569"
+                    border.width: 1
                 }
             }
 

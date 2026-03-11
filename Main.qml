@@ -4,8 +4,8 @@ import QtQuick.Layouts
 
 Window {
     id: root
-    width: 1280
-    height: 720
+    width: 1100
+    height: 650
     visible: true
     title: "Flight Control Application"
     color: "#0a0e17"
@@ -37,6 +37,9 @@ Window {
 
         // State değiştiğinde pozisyon/boyut animasyonlu geçiş
         anchors.fill: cameraFullscreen ? undefined : parent
+        // Panel açıkken haritayı panelin altına taşmayacak kadar küçült
+        // Böylece MapView panelin altında kalmaz, event çakışması olmaz
+        anchors.rightMargin: (!cameraFullscreen && root.activePanel !== "") ? 320 : 0
 
         // PiP modu (küçük pencere) - kamera tam ekrandayken
         x: cameraFullscreen ? 10 : 0
