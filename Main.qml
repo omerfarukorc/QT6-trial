@@ -106,7 +106,7 @@ Window {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        height: 48
+        height: 54
 
         gradient: Gradient {
             GradientStop { position: 0.0; color: "#e6131a2e" }
@@ -130,40 +130,40 @@ Window {
 
             // Logo
             Rectangle {
-                width: 28; height: 28; radius: 6
+                width: 32; height: 32; radius: 7
                 color: "#e94560"
                 Text {
                     anchors.centerIn: parent
                     text: "F"
                     color: "white"
-                    font.pixelSize: 15; font.bold: true
+                    font.pixelSize: 17; font.bold: true
                 }
             }
 
             Text {
                 text: "Flight Control"
                 color: "#e2e8f0"
-                font.pixelSize: 15; font.bold: true
+                font.pixelSize: 17; font.bold: true
             }
 
             // Bağlantı durumu
             Rectangle {
-                width: 8; height: 8; radius: 4
+                width: 9; height: 9; radius: 5
                 color: "#22c55e"
             }
             Text {
                 text: "Connected"
                 color: "#64748b"
-                font.pixelSize: 11
+                font.pixelSize: 12
             }
 
             // Ayırıcı
-            Rectangle { width: 1; height: 24; color: "#1e2a3a"; Layout.leftMargin: 4; Layout.rightMargin: 4 }
+            Rectangle { width: 1; height: 28; color: "#1e2a3a"; Layout.leftMargin: 6; Layout.rightMargin: 6 }
 
             // RTK Göstergesi
             Rectangle {
-                width: rtkRow.width + 18
-                height: 28; radius: 6
+                width: rtkRow.width + 20
+                height: 32; radius: 7
                 color: Qt.rgba(
                     rtkStatusColor(root.rtkSatelliteCount).r,
                     rtkStatusColor(root.rtkSatelliteCount).g,

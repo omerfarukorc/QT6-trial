@@ -9,7 +9,7 @@ Item {
     // Main.qml'de, MapPage oluşturulurken "topBarHeight: topBar.height" diyerek bu değere atama yapıldı.
     // Biz de buradaki UI elemanlarımızı yukarıdan 'topBarHeight' kadar aşağıda başlatacağız ki,
     // üstteki navigation bar harita ikonlarının üzerine kapanmasın.
-    property real topBarHeight: 48
+    property real topBarHeight: 54
     property bool isPiP: false
 
     // MapView (Qt 6.7+): Yeni nesil harita gösterim aracı. İçinde bir 'map' objesi barındırır ve touch (dokunma) özelliklerini otomatik yönetir.
@@ -144,59 +144,98 @@ Item {
         mapCenterAnimation.start(); // Animasyonu başlat
     }
 
-    // ── ODAKLANMA / NAVİGASYON PANELİ (SAĞ VE ÜST ORTA) ──
-    // Burası ekrandaki Drone, Kullanıcı ve Baz İstasyonu gibi butonları barındırır.
+    // ── ODAKLANMA / NAVİGASYON PANELİ (SAĞ ÜST — KAPANIR/AÇILIR) ──
+    // Küçük bir toggle butonu + açıldığında dikey ikon listesi
+    property bool navPanelOpen: true
+
+    // Toggle butonu (her zaman görünür)
     Rectangle {
+        id: navToggle
         visible: !isPiP
-        anchors.right: parent.right   // Ekranda sağa yasla
-        anchors.top: parent.top       // Ekranda üste yasla
-        anchors.rightMargin: 10       // Sağdan 10px uzaklık
-        
-        // Üstten TopBar'ın boyutu(48) + 10 px daha aşağı indir, butonlar üst çubuğun altına saklanmasın!
-        anchors.topMargin: topBarHeight + 10 
-        
-        width: navRow.width + 16
-        height: navRow.height + 16
-        radius: 12
-        color: "#a0000000" // Saydam Siyah arka plan
-        border.color: "#33ffffff"
-        border.width: 1
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.rightMargin: 10
+        anchors.topMargin: topBarHeight + 10
+        width: 32; height: 32; radius: 8
+        color: navToggleMouse.containsMouse ? "#30ffffff" : "#80000000"
+        border.color: "#25ffffff"; border.width: 1
+        z: 2
 
-        Row {
-            id: navRow
+        Text {
             anchors.centerIn: parent
-            spacing: 8
+            text: navPanelOpen ? "▸" : "◂"
+            color: "#94a3b8"
+            font.pixelSize: 14
+            rotation: navPanelOpen ? 0 : 180
 
-            // 1) Drone Butonu
+            Behavior on rotation {
+                NumberAnimation { duration: 250; easing.type: Easing.InOutQuad }
+            }
+        }
+
+        MouseArea {
+            id: navToggleMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: navPanelOpen = !navPanelOpen
+        }
+    }
+
+    // Navigasyon paneli (açılır/kapanır)
+    Rectangle {
+        id: navPanel
+        visible: !isPiP
+        anchors.right: parent.right
+        anchors.top: navToggle.bottom
+        anchors.rightMargin: 10
+        anchors.topMargin: 6
+        width: 38
+        height: navPanelOpen ? navCol.height + 12 : 0
+        radius: 10
+        color: "#cc0a0e14"
+        border.color: "#20ffffff"; border.width: 1
+        clip: true
+        opacity: navPanelOpen ? 1 : 0
+
+        Behavior on height  { NumberAnimation { duration: 250; easing.type: Easing.InOutQuad } }
+        Behavior on opacity { NumberAnimation { duration: 200 } }
+
+        Column {
+            id: navCol
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.top: parent.top
+            anchors.topMargin: 6
+            spacing: 4
+
+            // Drone
             Rectangle {
-                width: 40; height: 40; radius: 8
-                // İçindeki MouseArea üzerinde imleç varsa şeffaf beyaz, yoksa tamamen şeffaf
-                color: droneBtnMouse.containsMouse ? "#40ffffff" : "transparent"
+                width: 28; height: 28; radius: 6
+                color: droneBtnMouse.containsMouse ? "#30ffffff" : "transparent"
 
                 Image {
                     source: "assets/drone.svg"
-                    sourceSize: Qt.size(24, 24)
+                    sourceSize: Qt.size(18, 18)
                     anchors.centerIn: parent
                 }
 
                 MouseArea {
                     id: droneBtnMouse
                     anchors.fill: parent
-                    hoverEnabled: true  // Üzerine gelince algıla ki color durumu değişsin
+                    hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    // Tıklanınca kamerayı dronun olduğu koordinata kaydır.
                     onClicked: smoothFocusMap(mapView.droneCoordinate)
                 }
             }
 
-            // 2) Baz İstasyonu Butonu
+            // Baz İstasyonu
             Rectangle {
-                width: 40; height: 40; radius: 8
-                color: baseBtnMouse.containsMouse ? "#40ffffff" : "transparent"
+                width: 28; height: 28; radius: 6
+                color: baseBtnMouse.containsMouse ? "#30ffffff" : "transparent"
 
                 Image {
                     source: "assets/base_station.svg"
-                    sourceSize: Qt.size(24, 24)
+                    sourceSize: Qt.size(18, 18)
                     anchors.centerIn: parent
                 }
 
@@ -209,14 +248,14 @@ Item {
                 }
             }
 
-            // 3) Kullanıcı Butonu
+            // Kullanıcı
             Rectangle {
-                width: 40; height: 40; radius: 8
-                color: userBtnMouse.containsMouse ? "#40ffffff" : "transparent"
+                width: 28; height: 28; radius: 6
+                color: userBtnMouse.containsMouse ? "#30ffffff" : "transparent"
 
                 Image {
                     source: "assets/user.svg"
-                    sourceSize: Qt.size(24, 24)
+                    sourceSize: Qt.size(18, 18)
                     anchors.centerIn: parent
                 }
 
