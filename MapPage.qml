@@ -1,49 +1,70 @@
 import QtQuick
 import QtQuick.Controls
-import QtLocation
-import QtPositioning
+import QtLocation    // Plugin, MapView, MapQuickItem gibi harita objelerini sağlar.
+import QtPositioning // Koordinat (latitude, longitude) değişkenlerini (coordinate objesi) oluşturmamızı sağlar.
 
+// Item, ekranda boyutu ve konumu olan ama görünmez bir boş kutudur (div gibi düşünebilirsiniz).
 Item {
+    // MAIN'DEN GELEN ÖZELLİK (PROPERTY PASSING):
+    // Main.qml'de, MapPage oluşturulurken "topBarHeight: topBar.height" diyerek bu değere atama yapıldı.
+    // Biz de buradaki UI elemanlarımızı yukarıdan 'topBarHeight' kadar aşağıda başlatacağız ki,
+    // üstteki navigation bar harita ikonlarının üzerine kapanmasın.
     property real topBarHeight: 48
+
+    // MapView (Qt 6.7+): Yeni nesil harita gösterim aracı. İçinde bir 'map' objesi barındırır ve touch (dokunma) özelliklerini otomatik yönetir.
     MapView {
         id: mapView
-        anchors.fill: parent
+        anchors.fill: parent // Atası olan Item'ı tamamen kaplasın
 
-
+        // ── QGC HARİTASININ ENTEGRASYONU ──
+        // C++ tarafında qgc.core gibi bir kütüphane QGeoServiceProviderFactory miras alıp "QGroundControl" adıyla kaydedilmiştir.
+        // QML tarafında map.plugin'e "QGroundControl" adını vererek, harita motorumuzun 
+        // QGC'nin harita sisteminden (ör: çevrimdışı tile servisi vb.) verilerini çekmesini sağlıyoruz.
         map.plugin: Plugin {
-            name: "QGroundControl"
+            name: "QGroundControl" 
         }
+        
+        // Haritanın başlangıç noktası (Enlem: 39.9334, Boylam: 32.8597 => Ankara Kızılay)
         map.center: QtPositioning.coordinate(39.9334, 32.8597)
-        map.zoomLevel: 12
+        map.zoomLevel: 16 // Başlangıç yakınlaştırma seviyesi artırıldı (12 -> 16)
 
-        // Set map type to OpenStreetMap by default since others might need API keys
+        // Component.onCompleted: Bu MapView ekranda ilk oluşturulduğunda çalışacak JavaScript fonksiyonudur.
         Component.onCompleted: {
-            // Find OSM map type
+            // Adında "Satellite" (Uydu) geçen harita servisini/tipini bul ve onu aktif hale getir.
             for (var i = 0; i < mapView.map.supportedMapTypes.length; i++) {
-                if (mapView.map.supportedMapTypes[i].name === "Street Map") {
+                if (mapView.map.supportedMapTypes[i].name.indexOf("Satellite") !== -1 || mapView.map.supportedMapTypes[i].name.indexOf("Uydu") !== -1) {
                     mapView.map.activeMapType = mapView.map.supportedMapTypes[i];
                     break;
                 }
             }
 
-            // In Qt 6 with MapView, MapQuickItems must be explicitly added to the map object
+            // Qt 6'da MapView kullanıldığında, haritanın üzerindeki nesneler (MapQuickItem) 
+            // C++ veya JS ile 'mapView.map.addMapItem' diyerek manuel olarak harita katmanına eklenmelidir.
             mapView.map.addMapItem(baseMarker);
             mapView.map.addMapItem(userMarker);
             mapView.map.addMapItem(droneMarker);
         }
 
-        // --- MOCK DATA FOR MARKERS ---
-        // TODO: In the future, connect these properties to real C++ Telemetry/GPS models
+        // --- TAKLİT (MOCK) VERİLER ---
+        // 'property var' kullanarak koordinatları saklayan kendi değişkenlerimizi tanımladık.
+        // Gerçek bir senaryoda bu değişkenler C++'tan gelen Telemetri/GPS bağlamalarına (binding) bağlı olur.
         property var droneCoordinate: QtPositioning.coordinate(39.9350, 32.8620)
         property var baseCoordinate: QtPositioning.coordinate(39.9334, 32.8597)
         property var userCoordinate: QtPositioning.coordinate(39.9310, 32.8570)
-        property real droneHeading: 45 // degrees
+        property real droneHeading: 45 // Dronun Pusula yönü (derece cinsinden)
 
-        // 1. Base Station Marker
+        // 1. Baz İstasyonu İkonu (Marker)
+        // MapQuickItem, harita üzerindeki spesifik BİR KOORDİNATA herhangi bir görsel öğeyi tutturmak için kullanılır.
+        // Normal X/Y pozisyonu kullanmaz. Koordinatını kullanır.
         MapQuickItem {
             id: baseMarker
-            coordinate: mapView.baseCoordinate
+            coordinate: mapView.baseCoordinate // İkonu baz istasyonu koordinatına koy
+            
+            // anchorPoint, resmin hangi noktasından harita koordinatına çivileneceğini belirtir.
+            // Width/2, height/2 yaparak tam ortasını belirtmiş oluyoruz.
             anchorPoint: Qt.point(baseIcon.width / 2, baseIcon.height / 2)
+            
+            // Haritada görünecek olan görsel (SVG görselini veriyoruz)
             sourceItem: Image {
                 id: baseIcon
                 source: "assets/base_station.svg"
@@ -51,7 +72,7 @@ Item {
             }
         }
 
-        // 2. User Marker
+        // 2. Kullanıcı İkonu
         MapQuickItem {
             id: userMarker
             coordinate: mapView.userCoordinate
@@ -63,11 +84,11 @@ Item {
             }
         }
 
-        // 3. Drone Marker
+        // 3. Drone İkonu
         MapQuickItem {
             id: droneMarker
             coordinate: mapView.droneCoordinate
-            anchorPoint: Qt.point(48 / 2, 48 / 2)
+            anchorPoint: Qt.point(48 / 2, 48 / 2) // Tam ortadan tuttur
             sourceItem: Item {
                 width: 48
                 height: 48
@@ -77,18 +98,22 @@ Item {
                     anchors.centerIn: parent
                     source: "assets/drone.svg"
                     sourceSize: Qt.size(48, 48)
-                    rotation: mapView.droneHeading
-
+                    rotation: mapView.droneHeading // Cihazın burnunu rotasyona göre çevirir
+                    
+                    // Behavior (Davranış): Bir değişkenin aniden değil, animasyonla değişmesini sağlar.
+                    // Dönüş açısı (rotation) değiştiğinde anında dönmez de, RotationAnimation ile yavaşça döner.
                     Behavior on rotation {
                         RotationAnimation {
-                            direction: RotationAnimation.Shortest
-                            duration: 250
+                            direction: RotationAnimation.Shortest // En kısa yoldan dön (saat yönü veya tersi)
+                            duration: 250 // Çeyrek saniyede animasyonu bitir
                         }
                     }
                 }
             }
         }
 
+        // Shortcut, klavyeden basılan bir kısayolu tetiklemeye yarar. 
+        // "+" (ZoomIn) ve "-" (ZoomOut) tuşlarıyla da haritaya yakınlaşıp uzaklaşmayı ayarlıyoruz.
         Shortcut {
             enabled: mapView.map.zoomLevel < mapView.map.maximumZoomLevel
             sequence: StandardKey.ZoomIn
@@ -101,31 +126,37 @@ Item {
         }
     }
 
-    // --- ANIMATON FOR SMOOTH PANNING ---
+    // ── YUMUŞAK ODAKLANMA (PANCHANGE) ANİMASYONU ──
+    // Bir marker'a tıklandığında anında değil de, kameranın kayarak (pan) o koordinata gitmesini sağlar.
     PropertyAnimation {
         id: mapCenterAnimation
-        target: mapView.map
-        property: "center"
-        duration: 500
-        easing.type: Easing.InOutQuad
+        target: mapView.map       // Neyin özelliğini değiştirecek? (haritanın)
+        property: "center"        // Hangi özelliğini? ("center" yani merkez noktasını)
+        duration: 500             // Animasyon süresi (0.5 saniye)
+        easing.type: Easing.InOutQuad // Hızlanma ve yavaşlama grafiği (baştan hızlanır, sona doğru yavaşlar)
     }
 
+    // Seçili ikona kamerayı kaydırmak için çağrılacak JS Fonksiyonu.
     function smoothFocusMap(targetCoordinate) {
-        mapCenterAnimation.stop();
-        mapCenterAnimation.to = targetCoordinate;
-        mapCenterAnimation.start();
+        mapCenterAnimation.stop(); // Animasyon varsa durdur
+        mapCenterAnimation.to = targetCoordinate; // Yeni hedef koordinatı belirle
+        mapCenterAnimation.start(); // Animasyonu başlat
     }
 
-    // ── ODAKLANMA / NAVİGASYON PANELİ (TOP-CENTER) ──
+    // ── ODAKLANMA / NAVİGASYON PANELİ (SAĞ VE ÜST ORTA) ──
+    // Burası ekrandaki Drone, Kullanıcı ve Baz İstasyonu gibi butonları barındırır.
     Rectangle {
-        anchors.right: parent.right   // 👈 sağa yasla
-        anchors.top: parent.top
-        anchors.rightMargin: 10       // 👈 sağdan boşluk
-        anchors.topMargin: topBarHeight + 10
+        anchors.right: parent.right   // Ekranda sağa yasla
+        anchors.top: parent.top       // Ekranda üste yasla
+        anchors.rightMargin: 10       // Sağdan 10px uzaklık
+        
+        // Üstten TopBar'ın boyutu(48) + 10 px daha aşağı indir, butonlar üst çubuğun altına saklanmasın!
+        anchors.topMargin: topBarHeight + 10 
+        
         width: navRow.width + 16
         height: navRow.height + 16
         radius: 12
-        color: "#a0000000" // Slightly transparent black
+        color: "#a0000000" // Saydam Siyah arka plan
         border.color: "#33ffffff"
         border.width: 1
 
@@ -134,11 +165,10 @@ Item {
             anchors.centerIn: parent
             spacing: 8
 
-            // Drone Button
+            // 1) Drone Butonu
             Rectangle {
-                width: 40
-                height: 40
-                radius: 8
+                width: 40; height: 40; radius: 8
+                // İçindeki MouseArea üzerinde imleç varsa şeffaf beyaz, yoksa tamamen şeffaf
                 color: droneBtnMouse.containsMouse ? "#40ffffff" : "transparent"
 
                 Image {
@@ -150,17 +180,16 @@ Item {
                 MouseArea {
                     id: droneBtnMouse
                     anchors.fill: parent
-                    hoverEnabled: true
+                    hoverEnabled: true  // Üzerine gelince algıla ki color durumu değişsin
                     cursorShape: Qt.PointingHandCursor
+                    // Tıklanınca kamerayı dronun olduğu koordinata kaydır.
                     onClicked: smoothFocusMap(mapView.droneCoordinate)
                 }
             }
 
-            // Base Station Button
+            // 2) Baz İstasyonu Butonu
             Rectangle {
-                width: 40
-                height: 40
-                radius: 8
+                width: 40; height: 40; radius: 8
                 color: baseBtnMouse.containsMouse ? "#40ffffff" : "transparent"
 
                 Image {
@@ -178,11 +207,9 @@ Item {
                 }
             }
 
-            // User Button
+            // 3) Kullanıcı Butonu
             Rectangle {
-                width: 40
-                height: 40
-                radius: 8
+                width: 40; height: 40; radius: 8
                 color: userBtnMouse.containsMouse ? "#40ffffff" : "transparent"
 
                 Image {
@@ -202,28 +229,24 @@ Item {
         }
     }
 
-    // ── ZOOM KONTROLLERI ──
+    // ── ZOOM KONTROLLERİ VE HARİTA TİPİ SEÇİCİ (SAĞ ALT KÖŞE) ──
     Column {
         anchors.right: parent.right
-        anchors.bottom: parent.bottom
+        anchors.bottom: parent.bottom // Sağ alta yerleştiriyoruz
         anchors.margins: 20
         spacing: 4
 
-        // Harita tipi butonu
+        // Harita tipi butonu "M"
         Rectangle {
-            width: 36
-            height: 36
-            radius: 8
+            width: 36; height: 36; radius: 8
             color: mapTypeBtnMouse.containsMouse ? "#1e2a3a" : "#d9101520"
-            border.color: "#1e2a3a"
-            border.width: 1
+            border.color: "#1e2a3a"; border.width: 1
 
             Text {
                 anchors.centerIn: parent
                 text: "M"
                 color: "#94a3b8"
-                font.pixelSize: 14
-                font.bold: true
+                font.pixelSize: 14; font.bold: true
             }
 
             MouseArea {
@@ -231,67 +254,52 @@ Item {
                 anchors.fill: parent
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
+                // "M" ye tıklandığında sol tarafta açılan harita türü (uydu vs) panelini göster veya gizle
                 onClicked: mapTypePanel.visible = !mapTypePanel.visible
             }
         }
 
-        // Zoom in
+        // Yakınlaştır (+) Butonu
         Rectangle {
-            width: 36
-            height: 36
-            radius: 8
+            width: 36; height: 36; radius: 8
             color: zoomInMouse.containsMouse ? "#1e2a3a" : "#d9101520"
-            border.color: "#1e2a3a"
-            border.width: 1
+            border.color: "#1e2a3a"; border.width: 1
 
             Text {
-                anchors.centerIn: parent
-                text: "+"
-                color: "#e2e8f0"
-                font.pixelSize: 18
-                font.bold: true
+                anchors.centerIn: parent; text: "+"
+                color: "#e2e8f0"; font.pixelSize: 18; font.bold: true
             }
             MouseArea {
-                id: zoomInMouse
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: mapView.map.zoomLevel += 1
+                id: zoomInMouse; anchors.fill: parent
+                hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                onClicked: mapView.map.zoomLevel += 1 // zoomLevel'ı artırarak haritayı yakınlaştır
             }
         }
 
-        // Zoom out
+        // Uzaklaştır (-) Butonu
         Rectangle {
-            width: 36
-            height: 36
-            radius: 8
+            width: 36; height: 36; radius: 8
             color: zoomOutMouse.containsMouse ? "#1e2a3a" : "#d9101520"
-            border.color: "#1e2a3a"
-            border.width: 1
+            border.color: "#1e2a3a"; border.width: 1
 
             Text {
-                anchors.centerIn: parent
-                text: "-"
-                color: "#e2e8f0"
-                font.pixelSize: 18
-                font.bold: true
+                anchors.centerIn: parent; text: "-"
+                color: "#e2e8f0"; font.pixelSize: 18; font.bold: true
             }
             MouseArea {
-                id: zoomOutMouse
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
+                id: zoomOutMouse; anchors.fill: parent
+                hoverEnabled: true; cursorShape: Qt.PointingHandCursor
                 onClicked: mapView.map.zoomLevel -= 1
             }
         }
     }
 
-    // ── HARİTA TİPİ PANELİ ──
+    // ── HARİTA TİPİ AÇILIR PANELİ (Uydu, Sokak vs. Seçmek İçin) ──
     Rectangle {
         id: mapTypePanel
-        visible: false
+        visible: false // Başlangıçta gizli başlar
         anchors.right: parent.right
-        anchors.bottom: parent.bottom
+        anchors.bottom: parent.bottom // Zoom tuşlarının hemen soluna yerleştiriyoruz.
         anchors.rightMargin: 66
         anchors.bottomMargin: 20
         width: 180
@@ -303,20 +311,16 @@ Item {
 
         Column {
             id: mapTypeColumn
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.margins: 8
-            spacing: 2
+            anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top
+            anchors.margins: 8; spacing: 2
 
             Text {
                 text: "Harita Gorunumu"
-                color: "#64748b"
-                font.pixelSize: 11
-                font.bold: true
-                bottomPadding: 4
+                color: "#64748b"; font.pixelSize: 11; font.bold: true; bottomPadding: 4
             }
 
+            // Repeater (döngü). C++ eklentisinden (QGC eklentisi vd) gelen 'supportedMapTypes' dizisindeki 
+            // her bir harita çeşidi (Satellite, Hybrid, Street Map vs.) için butonu otomatik çoğaltır.
             Repeater {
                 model: mapView.map.supportedMapTypes
 
@@ -324,20 +328,17 @@ Item {
                     required property var modelData
                     required property int index
                     width: parent ? parent.width : 0
-                    height: 28
-                    radius: 6
+                    height: 28; radius: 6
                     color: {
-                        if (mapTypeItemMouse.containsMouse)
-                            return "#1e2a3a";
-                        if (mapView.map.activeMapType === modelData)
-                            return "#e94560";
+                        if (mapTypeItemMouse.containsMouse) return "#1e2a3a";
+                        if (mapView.map.activeMapType === modelData) return "#e94560";
                         return "transparent";
                     }
 
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
-                        anchors.left: parent.left
-                        anchors.leftMargin: 8
+                        anchors.left: parent.left; anchors.leftMargin: 8
+                        // Harita tipinin gerçek adını yazdır
                         text: parent.modelData.name
                         color: mapView.map.activeMapType === parent.modelData ? "white" : "#94a3b8"
                         font.pixelSize: 11
@@ -345,12 +346,11 @@ Item {
 
                     MouseArea {
                         id: mapTypeItemMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
+                        anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                        // Listeden bir öğeye tıklayınca aktif haritayı değiştir.
                         onClicked: {
                             mapView.map.activeMapType = parent.modelData;
-                            mapTypePanel.visible = false;
+                            mapTypePanel.visible = false; // paneli kapat
                         }
                     }
                 }
@@ -358,7 +358,7 @@ Item {
         }
     }
 
-    // ── BİLGİ PANELİ ──
+    // ── BİLGİ PANELİ (SOL ÜST KÖŞE, KOORDİNAT GÖSTERİCİ) ──
     Rectangle {
         anchors.left: parent.left
         anchors.top: parent.top
@@ -378,21 +378,225 @@ Item {
 
             Text {
                 text: "LAT  " + mapView.map.center.latitude.toFixed(4)
-                color: "#64748b"
-                font.pixelSize: 10
-                font.family: "Consolas"
+                color: "#64748b"; font.pixelSize: 10; font.family: "Consolas"
             }
             Text {
                 text: "LNG  " + mapView.map.center.longitude.toFixed(4)
-                color: "#64748b"
-                font.pixelSize: 10
-                font.family: "Consolas"
+                color: "#64748b"; font.pixelSize: 10; font.family: "Consolas"
             }
             Text {
                 text: "ZOOM " + mapView.map.zoomLevel.toFixed(1)
-                color: "#64748b"
-                font.pixelSize: 10
+                color: "#64748b"; font.pixelSize: 10; font.family: "Consolas"
+            }
+        }
+    }
+
+    // ── KAMERA GÖRÜNTÜSÜ (SOL ALT KÖŞE) ──
+    Rectangle {
+        id: cameraViewport
+        anchors.left: parent.left
+        anchors.bottom: parent.bottom
+        anchors.leftMargin: 10
+        anchors.bottomMargin: 10
+        width: 280
+        height: 180
+        radius: 10
+        color: "#f00a0e17"
+        border.color: "#2a3a4e"
+        border.width: 1.5
+        clip: true
+
+        // Kamera yok iken arkaplan gradyanı (koyu uzay tonu)
+        Rectangle {
+            anchors.fill: parent
+            radius: parent.radius
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: "#0d1117" }
+                GradientStop { position: 0.5; color: "#111820" }
+                GradientStop { position: 1.0; color: "#0a0e14" }
+            }
+        }
+
+        // Tarama çizgileri efekti (CRT/kamera hissi)
+        Column {
+            anchors.fill: parent
+            opacity: 0.03
+            Repeater {
+                model: 45
+                Rectangle {
+                    width: cameraViewport.width
+                    height: 2
+                    color: "white"
+                }
+            }
+        }
+
+        // Ortada "NO SIGNAL" / kamera ikonu
+        Column {
+            anchors.centerIn: parent
+            spacing: 8
+
+            // Kamera ikonu (Unicode)
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "📷"
+                font.pixelSize: 28
+                opacity: 0.4
+            }
+
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "CAMERA FEED"
+                color: "#3a4a5e"
+                font.pixelSize: 12
+                font.bold: true
                 font.family: "Consolas"
+                font.letterSpacing: 2
+            }
+
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "Waiting for connection..."
+                color: "#2a3a4e"
+                font.pixelSize: 9
+                font.family: "Consolas"
+            }
+        }
+
+        // Nişangah çizgileri (crosshair) — haçlı hedef göstergesi
+        // Yatay çizgi
+        Rectangle {
+            anchors.centerIn: parent
+            width: 40; height: 1
+            color: "#30ffffff"
+        }
+        // Dikey çizgi
+        Rectangle {
+            anchors.centerIn: parent
+            width: 1; height: 40
+            color: "#30ffffff"
+        }
+
+        // Köşe çerçeveleri (tactical frame)
+        // Sol üst köşe
+        Rectangle { x: 8;  y: 8;  width: 16; height: 2; color: "#50ffffff" }
+        Rectangle { x: 8;  y: 8;  width: 2;  height: 16; color: "#50ffffff" }
+        // Sağ üst köşe
+        Rectangle { x: parent.width - 24; y: 8;  width: 16; height: 2;  color: "#50ffffff" }
+        Rectangle { x: parent.width - 10; y: 8;  width: 2;  height: 16; color: "#50ffffff" }
+        // Sol alt köşe
+        Rectangle { x: 8;  y: parent.height - 10; width: 16; height: 2;  color: "#50ffffff" }
+        Rectangle { x: 8;  y: parent.height - 24; width: 2;  height: 16; color: "#50ffffff" }
+        // Sağ alt köşe
+        Rectangle { x: parent.width - 24; y: parent.height - 10; width: 16; height: 2;  color: "#50ffffff" }
+        Rectangle { x: parent.width - 10; y: parent.height - 24; width: 2;  height: 16; color: "#50ffffff" }
+
+        // ── ÜST BAR: CAM 1 etiketi + REC göstergesi ──
+        Rectangle {
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            height: 24
+            color: "#80000000"
+            radius: 0
+
+            // Üst köşeleri yuvarlatmak için mask katmanı
+            Rectangle {
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                height: 10
+                radius: 10
+                color: parent.color
+            }
+
+            Row {
+                anchors.left: parent.left
+                anchors.leftMargin: 8
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 6
+
+                // Kayıt noktası — yanıp sönen kırmızı daire
+                Rectangle {
+                    id: recDot
+                    width: 8; height: 8; radius: 4
+                    color: "#ef4444"
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    SequentialAnimation on opacity {
+                        loops: Animation.Infinite
+                        NumberAnimation { to: 1.0; duration: 500 }
+                        NumberAnimation { to: 0.2; duration: 500 }
+                    }
+                }
+
+                Text {
+                    text: "CAM 1"
+                    color: "#c8d6e5"
+                    font.pixelSize: 10
+                    font.bold: true
+                    font.family: "Consolas"
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+            }
+
+            // Sağ tarafta zaman göstergesi
+            Text {
+                anchors.right: parent.right
+                anchors.rightMargin: 8
+                anchors.verticalCenter: parent.verticalCenter
+                text: "00:00:00"
+                color: "#64748b"
+                font.pixelSize: 9
+                font.family: "Consolas"
+            }
+        }
+
+        // ── ALT BAR: Çözünürlük bilgisi ──
+        Rectangle {
+            anchors.bottom: parent.bottom
+            anchors.left: parent.left
+            anchors.right: parent.right
+            height: 20
+            color: "#60000000"
+
+            // Alt köşeleri yuvarlatmak
+            Rectangle {
+                anchors.bottom: parent.bottom
+                anchors.left: parent.left
+                anchors.right: parent.right
+                height: 10
+                radius: 10
+                color: parent.color
+            }
+
+            Row {
+                anchors.left: parent.left
+                anchors.leftMargin: 8
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 12
+
+                Text {
+                    text: "1920×1080"
+                    color: "#4a5568"
+                    font.pixelSize: 8
+                    font.family: "Consolas"
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+                Text {
+                    text: "30 FPS"
+                    color: "#4a5568"
+                    font.pixelSize: 8
+                    font.family: "Consolas"
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+                Text {
+                    text: "H.264"
+                    color: "#4a5568"
+                    font.pixelSize: 8
+                    font.family: "Consolas"
+                    anchors.verticalCenter: parent.verticalCenter
+                }
             }
         }
     }
