@@ -10,6 +10,7 @@ Item {
     // Biz de buradaki UI elemanlarımızı yukarıdan 'topBarHeight' kadar aşağıda başlatacağız ki,
     // üstteki navigation bar harita ikonlarının üzerine kapanmasın.
     property real topBarHeight: 48
+    property bool isPiP: false
 
     // MapView (Qt 6.7+): Yeni nesil harita gösterim aracı. İçinde bir 'map' objesi barındırır ve touch (dokunma) özelliklerini otomatik yönetir.
     MapView {
@@ -146,6 +147,7 @@ Item {
     // ── ODAKLANMA / NAVİGASYON PANELİ (SAĞ VE ÜST ORTA) ──
     // Burası ekrandaki Drone, Kullanıcı ve Baz İstasyonu gibi butonları barındırır.
     Rectangle {
+        visible: !isPiP
         anchors.right: parent.right   // Ekranda sağa yasla
         anchors.top: parent.top       // Ekranda üste yasla
         anchors.rightMargin: 10       // Sağdan 10px uzaklık
@@ -231,6 +233,7 @@ Item {
 
     // ── ZOOM KONTROLLERİ VE HARİTA TİPİ SEÇİCİ (SAĞ ALT KÖŞE) ──
     Column {
+        visible: !isPiP
         anchors.right: parent.right
         anchors.bottom: parent.bottom // Sağ alta yerleştiriyoruz
         anchors.margins: 20
@@ -297,7 +300,7 @@ Item {
     // ── HARİTA TİPİ AÇILIR PANELİ (Uydu, Sokak vs. Seçmek İçin) ──
     Rectangle {
         id: mapTypePanel
-        visible: false // Başlangıçta gizli başlar
+        visible: false
         anchors.right: parent.right
         anchors.bottom: parent.bottom // Zoom tuşlarının hemen soluna yerleştiriyoruz.
         anchors.rightMargin: 66
@@ -360,6 +363,7 @@ Item {
 
     // ── BİLGİ PANELİ (SOL ÜST KÖŞE, KOORDİNAT GÖSTERİCİ) ──
     Rectangle {
+        visible: !isPiP
         anchors.left: parent.left
         anchors.top: parent.top
         anchors.leftMargin: 10

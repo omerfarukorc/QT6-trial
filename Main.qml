@@ -33,6 +33,7 @@ Window {
         id: mapPage
         z: cameraFullscreen ? 2 : 0
         topBarHeight: topBar.height
+        isPiP: cameraFullscreen
 
         // State değiştiğinde pozisyon/boyut animasyonlu geçiş
         anchors.fill: cameraFullscreen ? undefined : parent
@@ -89,7 +90,11 @@ Window {
         Behavior on width  { NumberAnimation { duration: 350; easing.type: Easing.InOutQuad } }
         Behavior on height { NumberAnimation { duration: 350; easing.type: Easing.InOutQuad } }
 
-        onClicked: root.cameraFullscreen = !root.cameraFullscreen
+        // Sadece PiP modundayken (kamera küçükken) tıkla → kamerayı büyüt
+        onClicked: {
+            if (!root.cameraFullscreen)
+                root.cameraFullscreen = true;
+        }
     }
 
     // ══════════════════════════════════════════════════════════
